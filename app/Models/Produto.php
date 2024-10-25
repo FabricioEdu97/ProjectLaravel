@@ -2,17 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class Produto extends Model
+class Produto extends RModel
 {
-    use HasFactory;
-
-    protected $table = 'produto';
-
-    public function Categoria()
-    {
-        return $this->belongsTo(Categoria::class);
-    }
+    protected $table = "produtos";
+    protected $fillable = ['nome','foto','descricao','categoria_id','valor'];
 }
