@@ -5,11 +5,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Electro </title>
 
-    <title>Electro</title>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css">
     <!-- Google font -->
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,700" rel="stylesheet">
 
@@ -25,42 +22,37 @@
 
     <!-- Font Awesome Icon -->
     <link rel="stylesheet" href="{{ url('assets/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Custom stylesheet -->
 
     <!-- Custom stlylesheet -->
     <link type="text/css" rel="stylesheet" href="{{ url('assets/css/style.css') }}" />
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
-
-</head>
-
-<body>
-    <!-- HEADER -->
     <header>
         <!-- TOP HEADER -->
         <div id="top-header">
             <div class="container">
                 <ul class="header-links pull-left">
-                    <li><a href="{{ route('home') }}">HOME</a></li>
-                    <li><a href="#"><i class="fa fa-envelope-o"></i> fabricio@gmail.com</a></li>
-                    <li><a href="#"><i class="fa fa-map-marker"></i> 1734 Stonecoal Road</a></li>
+                    <li><a href="{{ route('home') }}"><i class="fa fa-home"></i> HOME</a></li> <!-- Ícone de Home -->
+                    <li><a href="{{ route('admin.login') }}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+                    {{-- <li><a href="{{ route('historico.compras') }}"><i class="fa fa-history"></i> Historico</a></li> --}}
                 </ul>
                 <ul class="header-links pull-right">
-                    <li><a href="{{ route('categoria') }}"><i class="fa fa-dollar"></i> Produtos    </a></li>
+                    <li><a href="{{ route('categoria') }}"><i class="bi bi-box-seam-fill"></i> Produtos </a></li>
                     <li><a href="{{ route('cadastrar') }}"><i class="fa fa-user-o"></i> Cadastrar</a></li>
                     @if (!Auth::user())
-                        <li><a href="{{ route('logar') }}">Logar</a></li>
+                        <li><a href="{{ route('logar') }}"><i class="fa fa-sign-in"></i> Logar</a></li>
+                        <!-- Ícone para Logar -->
                     @else
-                        <li><a href="{{ route('sair') }}">Logout</a></li>
+                        <li><a href="{{ route('sair') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
+                        <!-- Ícone para Logout -->
                     @endif
                 </ul>
             </div>
         </div>
         <!-- /TOP HEADER -->
+
 
         <!-- MAIN HEADER -->
         <div id="header">
@@ -102,45 +94,68 @@
                                 <a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
                                     <i class="fa fa-shopping-cart"></i>
                                     <span>Meu carrinho</span>
+                                    <!-- Mostra o número total de itens no carrinho -->
+                                    <div class="qty">{{ session('cart') ? count(session('cart')) : 0 }}</div>
                                 </a>
                                 <div class="cart-dropdown">
                                     <div class="cart-list">
-                                        <div class="product-widget">
-                                            <div class="product-img">
-                                                <img src="{{ url('assets/img/product01.png') }}" alt="">
-                                            </div>
-                                            <div class="product-body">
-                                                <h3 class="product-name"><a
-                                                        href="{{ route('ver_carrinho') }}">produto</a>
-                                                </h3>
-
-                                            </div>
-                                            <button class="delete"><i class="fa fa-close"></i></button>
-                                        </div>
-
-                                        <div class="product-widget">
-                                            <div class="product-img">
-                                                <img src="{{ url('assets/img/product02.png') }}" alt="">
-                                            </div>
-                                            <div class="product-body">
-                                                <h3 class="product-name"><a href="#">product name goes here</a>
-                                                </h3>
-                                                <h4 class="product-price"><span class="qty">3x</span>$980.00</h4>
-                                            </div>
-                                            <button class="delete"><i class="fa fa-close"></i></button>
-                                        </div>
+                                        <!-- Itera sobre os produtos adicionados ao carrinho -->
+                                        @if (session('cart') && count(session('cart')) > 0)
+                                            @foreach (session('cart') as $produto)
+                                                <div class="product-widget">
+                                                    <div class="product-img">
+                                                        <img src="{{ asset('storage/' . $produto->foto) }}"
+                                                            alt="{{ $produto->nome }}">
+                                                    </div>
+                                                    <div class="product-body">
+                                                        <h3 class="product-name">
+                                                            <a
+                                                                href="{{ route('detalhes_produto', ['id' => $produto->id]) }}">{{ $produto->nome }}</a>
+                                                        </h3>
+                                                        <h4 class="product-price"><span class="qty">1x</span> R$
+                                                            {{ $produto->valor }}</h4>
+                                                    </div>
+                                                    <form
+                                                        action="{{ route('carrinho_excluir', ['indice' => $loop->index]) }}"
+                                                        method="POST">
+                                                        @csrf
+                                                        <button type="submit" class="delete"><i
+                                                                class="fa fa-close"></i></button>
+                                                    </form>
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            <p>Carrinho vazio.</p>
+                                        @endif
                                     </div>
+                                    @php $subtotal = session('cart') ? collect(session('cart'))->sum('valor') : 0; @endphp
                                     <div class="cart-summary">
-                                        <small>3 Item(s) selected</small>
-                                        <h5>SUBTOTAL: $2940.00</h5>
+                                        <small>{{ session('cart') ? count(session('cart')) : 0 }} Item(s)
+                                            selecionados</small>
+                                        <h5>SUBTOTAL: R$ {{ $subtotal }}</h5>
                                     </div>
                                     <div class="cart-btns">
-                                        <a href="#">View Cart</a>
-                                        <a href="#">Checkout <i class="fa fa-arrow-circle-right"></i></a>
+                                        <a href="{{ route('ver_carrinho') }}">Ver Carrinho</a>
+
+                                        <!-- Verifica se o subtotal é maior que zero antes de exibir o botão "Finalizar" -->
+                                        @if ($subtotal > 0)
+                                            <a href="#"
+                                                onclick="event.preventDefault(); document.getElementById('finalizar-compra-form').submit();">
+                                                Finalizar <i class="fa fa-arrow-circle-right"></i>
+                                            </a>
+
+                                            <!-- Formulário oculto que envia o pedido -->
+                                            <form id="finalizar-compra-form" action="{{ route('payment') }}"
+                                                method="POST" style="display: none;">
+                                                @csrf
+                                                <input type="hidden" name="amount" value="{{ $subtotal }}">
+                                            </form>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                             <!-- /Cart -->
+
 
                             <!-- Menu Toogle -->
                             <div class="menu-toggle">
@@ -169,13 +184,8 @@
             <!-- responsive-nav -->
             <div id="responsive-nav">
                 <!-- NAV -->
-                <ul class="main-nav nav navbar-nav">
-                    @if (Auth::user())
-                        <div class="col-12">
-                            <p class="text-right">Seja bem vindo, {{ Auth::user()->nome }}, <a
-                                    href="{{ route('sair') }}">Sair</a></p>
-                        </div>
-                    @endif
+
+
                 </ul>
                 <!-- /NAV -->
             </div>
@@ -366,45 +376,54 @@
                             <!-- tab -->
                             <div id="tab2" class="tab-pane fade in active">
                                 <div class="products-slick" data-nav="#slick-nav-2">
-                {{-- ----------------------------------------------------------------------------------------------------------------- --}}
+                                    {{-- ----------------------------------------------------------------------------------------------------------------- --}}
                                     <!-- product -->
-                                        @foreach($produtosMaisVendidos as $produto)
-                                            <div class="product">
-                                                 <div class="product-img">
+                                    @foreach ($produtosMaisVendidos as $produto)
+                                        <div class="product">
+                                            <div class="product-img">
 
-                                                   <img src="{{ asset('storage/' . $produto->foto) }} ">
+                                                <img src="{{ asset('storage/' . $produto->foto) }} ">
+                                            </div>
+                                            <div class="product-body">
+                                                {{-- <p class="product-category">Categoria: {{ $produto->categoria->categoria }}</p> --}}
+                                                <h3 class="product-name"><a
+                                                        href="{{ route('detalhes_produto', $produto->id) }}">{{ $produto->nome }}</a>
+                                                </h3>
+                                                <h4 class="product-price">R$
+                                                    {{ number_format($produto->valor, 2, ',', '.') }}
+                                                    <del class="product-old-price">R$
+                                                        {{ number_format($produto->valor_original ?? $produto->valor, 2, ',', '.') }}</del>
+                                                </h4>
+                                                <div class="product-rating">
+                                                    <i class="fa fa-star"></i>
+                                                    <i class="fa fa-star"></i>
+                                                    <i class="fa fa-star"></i>
+                                                    <i class="fa fa-star"></i>
+                                                    <i class="fa fa-star"></i>
                                                 </div>
-                                                        <div class="product-body">
-                                                            {{-- <p class="product-category">Categoria: {{ $produto->categoria->categoria }}</p> --}}
-                                                            <h3 class="product-name"><a href="{{ route('detalhes_produto', $produto->id) }}">{{ $produto->nome }}</a></h3>
-                                                            <h4 class="product-price">R$ {{ number_format($produto->valor, 2, ',', '.') }}
-                                                                <del class="product-old-price">R$ {{ number_format($produto->valor_original ?? $produto->valor, 2, ',', '.') }}</del>
-                                                            </h4>
-                                                            <div class="product-rating">
-                                                                <i class="fa fa-star"></i>
-                                                                <i class="fa fa-star"></i>
-                                                                <i class="fa fa-star"></i>
-                                                                <i class="fa fa-star"></i>
-                                                                <i class="fa fa-star"></i>
-                                                            </div>
-                                                            <div class="product-btns">
-                                                                <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span class="tooltipp">adicionar à lista de desejos</span></button>
-                                                                <button class="add-to-compare"><i class="fa fa-exchange"></i><span class="tooltipp">adicionar para comparar</span></button>
-                                                                <button class="quick-view"><i class="fa fa-eye"></i><span class="tooltipp">visualização rápida</span></button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="add-to-cart">
-                                                            <button class="add-to-cart-btn" data-id="{{ $produto->id }}"><i class="fa fa-shopping-cart"></i> Adicionar ao carrinho</button>
-                                                        </div>
-                                                    </div>
-                                        @endforeach
+                                                <div class="product-btns">
+                                                    <button class="add-to-wishlist"><i class="fa fa-heart-o"></i><span
+                                                            class="tooltipp">adicionar à lista de
+                                                            desejos</span></button>
+                                                    <button class="add-to-compare"><i class="fa fa-exchange"></i><span
+                                                            class="tooltipp">adicionar para comparar</span></button>
+                                                    <button class="quick-view"><i class="fa fa-eye"></i><span
+                                                            class="tooltipp">visualização rápida</span></button>
+                                                </div>
+                                            </div>
+                                            <div class="add-to-cart">
+                                                <button class="add-to-cart-btn" data-id="{{ $produto->id }}"><i
+                                                        class="fa fa-shopping-cart"></i> Adicionar ao carrinho</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
 
 
 
                                     <!-- /product -->
- {{-- ----------------------------------------------------------------------------------------------------------------- --}}
+                                    {{-- ----------------------------------------------------------------------------------------------------------------- --}}
                                     <!-- product -->
-                                            {{-- <div class="product">
+                                    {{-- <div class="product">
                                                 <div class="product-img">
                                                     <img src="{{ url('assets/img/product01.png') }}" alt="">
                                                 </div>
@@ -433,7 +452,7 @@
                                                 </div>
                                             </div> --}}
 
-    {{-- ----------------------------------------------------------------------------------------------------------------- --}}
+                                    {{-- ----------------------------------------------------------------------------------------------------------------- --}}
                                     <!-- /product -->
                                 </div>
                                 <div id="slick-nav-2" class="products-slick-nav"></div>
@@ -770,10 +789,10 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="newsletter">
-                        <p>Sign Up for the <strong>NEWSLETTER</strong></p>
+                        <p> Sigam <strong>Electro</strong></p>
                         <form>
-                            <input class="input" type="email" placeholder="Enter Your Email">
-                            <button class="newsletter-btn"><i class="fa fa-envelope"></i> Subscribe</button>
+                            <input class="input" type="email" placeholder="Digite seu email">
+                            <button class="newsletter-btn"><i class="fa fa-envelope"></i> Se inscrevam</button>
                         </form>
                         <ul class="newsletter-follow">
                             <li>
@@ -809,12 +828,11 @@
                     <div class="col-md-3 col-xs-6">
                         <div class="footer">
                             <h3 class="footer-title">About Us</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                                incididunt ut.</p>
+                            <p>ITE. Linguagem de programação web 2.</p>
                             <ul class="footer-links">
-                                <li><a href="#"><i class="fa fa-map-marker"></i>1734 Stonecoal Road</a></li>
-                                <li><a href="#"><i class="fa fa-phone"></i>+021-95-51-84</a></li>
-                                <li><a href="#"><i class="fa fa-envelope-o"></i>email@email.com</a></li>
+                                <li><a href="#"><i class="fa fa-map-marker"></i>Vila Falcão</a></li>
+                                <li><a href="#"><i class="fa fa-phone"></i>14992356988</a></li>
+                                <li><a href="#"><i class="fa fa-envelope-o"></i>fabricio@ite.com</a></li>
                             </ul>
                         </div>
                     </div>
@@ -908,6 +926,6 @@
     <script src="{{ url('assets/js/jquery.zoom.min.js') }}"></script>
     <script src="{{ url('assets/js/main.js') }}"></script>
 
-</body>
+    </body>
 
 </html>

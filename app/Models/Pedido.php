@@ -10,7 +10,7 @@ class Pedido extends Model
     use HasFactory; // Adicione o trait HasFactory
 
     protected $table = "pedidos"; // Definindo a tabela
-    protected $fillable = ['datapedido', 'status', 'usuario_id']; // Campos preenchíveis
+    protected $fillable = ['usuario_id', 'payment_id', 'datapedido', 'status']; // Campos preenchíveis
 
     // Relacionamento muitos-para-muitos com Produto
     public function produtos()

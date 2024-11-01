@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Categoria;
 use App\Models\Produto;
 use App\Services\VendaService;
-use App\Http\Controllers\AdminProdutoController;
+use Illuminate\Support\Facades\Auth; // Importa o Auth
 
 class ProdutoController extends Controller
 {
@@ -30,7 +30,6 @@ class ProdutoController extends Controller
             ->get();
     }
 
-
     public function detalhesProduto($id)
     {
         $produto = Produto::findOrFail($id);
@@ -40,37 +39,40 @@ class ProdutoController extends Controller
     public function categoria(Request $request, $idcategoria = 0)
     {
         $data = [];
-
-        //select * from categoria
+        // Obtendo todas as categorias
         $listaCategorias = Categoria::all();
-        //select * from produtos limit 4
-        $queryProduto = Produto::limit(1100);
+        // Obtendo produtos com base na categoria
+        $queryProduto = Produto::query();
 
         if ($idcategoria != 0) {
-            //where categoria_id = $idcategoria
+            // Filtra por categoria se idcategoria for diferente de 0
             $queryProduto->where("categoria_id", $idcategoria);
         }
 
-        $listaProdutos = $queryProduto->get();
+        $listaProdutos = $queryProduto->limit(1100)->get();
 
         $data["lista"] = $listaProdutos;
         $data["listaCategoria"] = $listaCategorias;
         $data["idcategoria"] = $idcategoria;
-        return view("site/categoria", $data);
+        return view("site.categoria", $data);
     }
 
     public function adicionarCarrinho($idProduto = 0, Request $request)
     {
-        //buscar o produto por id
+        // Buscar o produto por id
         $prod = Produto::find($idProduto);
 
         if ($prod) {
-            //encontrou um produto
-
-            //buscar da sessão o carrinho atual
+            // Buscar da sessão o carrinho atual
             $carrinho = session('cart', []);
 
-            array_push($carrinho, $prod);
+            // Verifica se o produto já está no carrinho
+            $prodIndex = array_search($idProduto, array_column($carrinho, 'id'));
+
+            if ($prodIndex === false) {
+                // Produto não está no carrinho, então adiciona
+                $carrinho[] = $prod;
+            }
             session(['cart' => $carrinho]);
         }
         return redirect()->route("categoria");
@@ -79,9 +81,7 @@ class ProdutoController extends Controller
     public function verCarrinho(Request $request)
     {
         $carrinho = session('cart', []);
-        $data = ['cart' => $carrinho];
-
-        return view("site/carrinho", $data);
+        return view("site.carrinho", ['cart' => $carrinho]);
     }
 
     public function excluirCarrinho($indice, Request $request)
@@ -96,16 +96,43 @@ class ProdutoController extends Controller
 
     public function finalizar(Request $request)
     {
-
-        $prods = session('cart', []);
-        $vendaService = new vendaService();
-        $result = $vendaService->finalizarVenda($prods, \Auth::user());
-
-        if ($result["status"] == "ok") {
-            $request->session()->forget("cart");
+        // Verifique se o usuário está autenticado
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Você precisa estar logado para finalizar a compra.');
         }
 
+        // Obtendo os produtos do carrinho
+        $prods = session('cart', []);
+
+        // Lógica para finalizar a venda
+        $vendaService = new VendaService();
+        $result = $vendaService->finalizarVenda($prods, Auth::user());
+
+        // Verifique se a venda foi bem-sucedida
+        if ($result["status"] == "ok") {
+            // Limpa o carrinho após a venda
+            $request->session()->forget("cart"); // Remove todos os itens do carrinho
+
+            // Atualiza a quantidade dos produtos no estoque
+            foreach ($prods as $produto) {
+                $produtoModel = Produto::find($produto->id);
+                if ($produtoModel) {
+                    $quantidadeVenda = $produto->quantidade ?? 1; // Ajuste conforme necessário
+                    // Verifica se a quantidade disponível é suficiente
+                    if ($produtoModel->quantidade >= $quantidadeVenda) {
+                        $produtoModel->quantidade -= $quantidadeVenda;
+                        $produtoModel->save();
+                    } else {
+                        // Aqui você pode adicionar uma lógica para lidar com estoque insuficiente, se necessário
+                    }
+                }
+            }
+        }
+
+        // Define a mensagem de feedback para o usuário
         $request->session()->flash($result["status"], $result["message"]);
+
+        // Redireciona para a página do carrinho
         return redirect()->route("ver_carrinho");
     }
 }

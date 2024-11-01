@@ -23,4 +23,8 @@ class Produto extends Model
     {
         return $this->belongsToMany(Pedido::class, 'itens_pedidos')->withPivot('quantidade'); // Relacionamento correto
     }
+    public function itens()
+    {
+        return $this->hasMany(ItensPedido::class, 'produto_id');
+    }
 }

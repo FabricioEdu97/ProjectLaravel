@@ -8,6 +8,9 @@
     use App\Http\Controllers\AdminProdutoController;
     use App\Http\Controllers\AdminAuthController;
     use App\Http\Controllers\AdminUsuarioController;
+    use App\Http\Controllers\CompraController;
+
+    use App\Http\Controllers\PurchaseHistoryController;
 
 
     Route::match(['get', 'post'], '/', [ProdutoController::class, 'index'])->name('home');
@@ -66,6 +69,10 @@
     Route::delete('admin/usuarios/{id}', [AdminUsuarioController::class, 'destroy'])->name('admin.usuarios.destroy');
 
 
+
+
+    Route::get('/historico-compras', [PurchaseHistoryController::class, 'historicoCompras'])->name('historico.compras');
+    Route::post('/comprar', [CompraController::class, 'processarCompra'])->name('comprar');
 
 
     Route::post('pay',[PaymentController::class, 'pay'])->name('payment');

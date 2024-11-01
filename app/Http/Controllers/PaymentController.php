@@ -56,59 +56,21 @@ class PaymentController extends Controller
             if ($response->isSuccessful()) {
                 $arr = $response->getData();
 
-                // Salvar os dados do pagamento no banco de dados
-                $payment = new Payment();
-                $payment->payment_id = $arr['id'];
-                $payment->payer_id = $arr['payer']['payer_info']['payer_id'];
-                $payment->payer_email = $arr['payer']['payer_info']['email'];
-                $payment->amount = $arr['transactions'][0]['amount']['total'];
-                $payment->currency = env('PAYPAL_CURRENCY');
-                $payment->payments_status = $arr['state'];
-                $payment->save();
-
-                // Criar pedido
-                if (Auth::check()) {
-                    // Confirma que o id do usuário está associado a um registro na tabela `usuarios`
-                    $pedido = new Pedido();
-                    $pedido->payment_id = $arr['id'];
-                    $pedido->usuario_id = Auth::id(); // Pega o id do usuário autenticado
-                    $pedido->datapedido = now();
-                    $pedido->status = 'Pago';
-                    $pedido->save();
-                } else {
-                    // Se o usuário não estiver autenticado, redirecione para a página de login
-                    return redirect()->route('login')->with('error', 'Você precisa estar logado para concluir a compra.');
-                }
-
-                // Adicionar itens ao pedido
-                $produtosCarrinho = session()->get('cart', []);
-                foreach ($produtosCarrinho as $produtoId => $item) {
-                    $itemPedido = new ItensPedido();
-                    $itemPedido->pedido_id = $pedido->id;
-                    $itemPedido->produto_id = $produtoId;
-                    $itemPedido->quantidade = $item['quantidade'];
-                    $itemPedido->valor = $item['valor'];
-                    $itemPedido->dt_item = now();
-                    $itemPedido->save();
-                }
-
-                // Limpar o carrinho após o pagamento
-                session()->forget('cart');
-
-                // Obter os produtos comprados
-                $produtosComprados = $this->getProdutosComprados($pedido->id);
+                // Aqui você apenas salva o pagamento se necessário,
+                // mas para a simplicidade, vamos apenas obter os dados para a view
+                $paymentId = $arr['id'];
+                $totalAmount = $arr['transactions'][0]['amount']['total'];
 
                 return view('payment.success', [
-                    'produtos' => $produtosComprados,
-                    'payment_id' => $arr['id'],
-                    'amount' => $arr['transactions'][0]['amount']['total'],
-                    'status' => $arr['state']
+                    'payment_id' => $paymentId,
+                    'amount' => $totalAmount,
                 ]);
             } else {
                 return $response->getMessage();
             }
         }
     }
+
 
     private function getProdutosComprados($pedidoId)
     {
@@ -126,4 +88,23 @@ class PaymentController extends Controller
 
         return $produtosComprados;
     }
+
+    public function historicoCompras()
+    {
+        // Verifica se o usuário está autenticado
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Você precisa estar logado para ver seu histórico de compras.');
+        }
+
+        // Pega o id do usuário autenticado
+        $usuarioId = Auth::id();
+
+        // Busca os itens comprados pelo usuário
+        $itensComprados = ItensPedido::whereHas('pedido', function ($query) use ($usuarioId) {
+            $query->where('usuario_id', $usuarioId);
+        })->with('produto')->get();
+
+        return view('historico_compras', ['itens' => $itensComprados]);
+    }
+
 }
