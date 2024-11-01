@@ -25,7 +25,7 @@
                         </a>
                     </td>
                     <td>{{$p->nome}}</td>
-                    <td><img src="{{asset($p->foto)}}" height="50" /></td>
+                    <td><img src="{{ asset('storage/' . $p->foto) }}" height="50"></td>
                     <td>{{$p->valor}}</td>
                     <td>{{$p->descricao}}</td>
                 </tr>
@@ -42,10 +42,13 @@
         </tfooter>
     </table>
 
-    <form method="post" action="{{route('carrinho_finalizar')}}">
+    <form method="post" action="{{ route('payment') }}">
         @csrf
+
+        <input type="hidden" name="amount" id="amount" value="{{ $total }}">
         <input type="submit" value="Finalizar Compra" class="btn btn-lg btn-success text-right">
-    </form>  
+    </form>
+
 @else
     <p>nenhum item no carrinho</p>
 @endif

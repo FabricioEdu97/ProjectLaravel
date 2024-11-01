@@ -13,11 +13,11 @@ class ClienteController extends Controller
     public function cadastrar(Request $request)
     {
         $data = [];
- 
+
         return view('site/cadastrar', $data);
     }
     public function cadastrarCliente(Request $request){
-        //pega todos os valores do usuario 
+        //pega todos os valores do usuario
         $values = $request->all();
         $usuario = new Usuario();
         //$usuario->cpf =$request->input("cpf","");
@@ -28,17 +28,17 @@ class ClienteController extends Controller
         $usuario->password = \Hash::make($senha); //criptografia
         $endereco = new Endereco($values);
         $endereco ->logradouro = $request->input("endereco","");
-        
+
         $clienteService = new ClienteService();
         $result = $clienteService-> salvarUsuario($usuario, $endereco);
-        
+
         $message = $result["message"];
         $status = $result["status"];
 
         //ok. cadastrado com sucesso
         //err, Usuario não pode ser cadastrado
         $request-> session()->flash($status,$message);
-     
+
                 return redirect()-> route("cadastrar");
     }
-}   
+}

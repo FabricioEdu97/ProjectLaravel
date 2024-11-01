@@ -19,13 +19,13 @@ class ClienteService {
             $endereco->usuario_id = $user->id;
             $endereco->save();
             \DB::commit();
-            
+
             return['status' => 'ok','message' => 'Usuario cadastrado com sucesso'];
         }catch(\Exception $e){
             //tratar o erro
             \Log::error("ERRO", ['file'=>'ClienteService.salvarUsuario','message'=>$e->getMessage()]);
             \DB::rollback();
-            
+
             return['status' => 'err','message' => 'Não pode cadastrar um usuario'];
         }
     }
